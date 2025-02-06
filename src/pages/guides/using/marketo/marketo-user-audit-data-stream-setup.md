@@ -7,15 +7,17 @@ import Debug from '/src/pages/guides/using/marketo/marketo-data-streams-debug.md
 
 # Setting up Marketo User Audit Data Stream with Adobe I/O Events
 
-These instructions describe how to set up and get started using Adobe I/O Events for Marketo user driven change events.  You can use Adobe I/O for streaming Marketo user driven change events such as the modification of emails, campaigns, and landing pages.
+These instructions describe how to set up and get started using Adobe I/O Events for Marketo user-driven change events.  You can use Adobe I/O for streaming Marketo user-driven change events such as the modification of emails, campaigns, and landing pages.
 
 ## Introduction
 
-User Audit Data Stream provides all the user driven change events that are shown in the MLM Audit Trail as an event stream to which you can subscribe.
+User Audit Data Stream provides all the user-driven change events that are shown in the MLM Audit Trail as an event stream to which you can subscribe.
 
 ## Setup User Audit Data Stream in Marketo
 
-User Audit Data Stream is currently a Beta Product and thus cannot be enabled in Marketo without a Beta agreement.  After a Beta agreement is in place, work with your TAM and Customer Engineering team to enable User Audit Data Stream for your subscription.
+Data Streams are available to those that have purchased a Marketo Engage Performance Tier Package. Once a Performance Tier agreement is in place, work with your TAM and Customer Engineering team to enable this Data Stream for your subscription.
+
+We typically just need to know the MunchkinId for the subscription, and the associated Adobe OrgId, which enables access to the Adobe IO Developer Console.
 
 ## Setup Adobe I/O
 
@@ -42,7 +44,7 @@ For basic instructions for this use case, starting from [console.adobe.io](/cons
 
   ![Event selection](../../img/UserAuditDataStreamIOSetup4.png "Select event subscriptions")
 
-- Set up JWT Credentials (either generate a new key pair or upload a public key)
+- Set up OAuth Server-to-Server Credentials
 
   ![Set up credentials](../../img/UserAuditDataStreamIOSetup5.png "Set up credentials")
 
@@ -72,8 +74,6 @@ For basic instructions for this use case, starting from [console.adobe.io](/cons
 
 ### Event Data Structure
 
-*We are still finalizing the data structure as we prepare for Beta release.  While we don't expect any major changes, there may be some minor modifications.*
-
 Events are structured in JSON format using the [CloudEvents](https://cloudevents.io/) spec
 
 *Example Event (batch)*
@@ -85,10 +85,9 @@ Events are structured in JSON format using the [CloudEvents](https://cloudevents
         "event": {
             "body": {
                 "specversion": "1.0",
-                "id": "b77c743a-8e28-40f2-8aab-9541bbc85e68",
                 "type": "com.adobe.platform.marketo.audit.user.email",
                 "source": "https://www.marketo.com",
-                "time": "2020-05-28T19:14:44.807Z",
+                "time": "2024-07-11 13:20:42.755",
                 "datacontenttype": "application/json",
                 "dataschema": "V2.0",
                 "data": {
@@ -96,21 +95,21 @@ Events are structured in JSON format using the [CloudEvents](https://cloudevents
                     "componentType": "Email",
                     "eventAction": "approve",
                     "munchkinId": "123-ABC-456",
-                    "imsOrgId": "49C579695EA927530A494036@AdobeOrg",
+                    "imsOrgId": "<your_ims_org_id>@AdobeOrg",
                     "userId": "user@marketo.com"
                 }
             }
-        }
+        },
+        "recipient_client_id": "<your_client_id>"
     },
     {
         "event_id": "e931c3ec-9d76-406b-ac89-626e9650813a",
         "event": {
             "body": {
                 "specversion": "1.0",
-                "id": "afcb6581-198c-4056-a395-6f77cf242d05",
                 "type": "com.adobe.platform.marketo.audit.user.landingpage",
                 "source": "https://www.marketo.com",
-                "time": "2020-05-28T19:14:46.221Z",
+                "time": "2024-07-11 13:20:42.755",
                 "datacontenttype": "application/json",
                 "dataschema": "V2.0",
                 "data": {
@@ -118,11 +117,12 @@ Events are structured in JSON format using the [CloudEvents](https://cloudevents
                     "componentType": "Landing Page",
                     "eventAction": "approve",
                     "munchkinId": "123-ABC-456",
-                    "imsOrgId": "49C579695EA927530A494036@AdobeOrg",
+                    "imsOrgId": "<your_ims_org_id>@AdobeOrg",
                     "userId": "user@marketo.com"
                 }
             }
-        }
+        },
+        "recipient_client_id": "<your_client_id>"
     }
 ]
 ````
@@ -135,10 +135,9 @@ Events are structured in JSON format using the [CloudEvents](https://cloudevents
     "event": {
         "body": {
             "specversion": "1.0",
-            "id": "72dd1983-decb-4390-afde-2fa1307c9770",
             "type": "com.adobe.platform.marketo.audit.user.email",
             "source": "https://www.marketo.com",
-            "time": "2020-05-28T19:20:47.283Z",
+            "time": "2024-07-11 13:20:42.755",
             "datacontenttype": "application/json",
             "dataschema": "V2.0",
             "data": {
@@ -146,35 +145,42 @@ Events are structured in JSON format using the [CloudEvents](https://cloudevents
                 "componentType": "Email",
                 "eventAction": "approve",
                 "munchkinId": "123-ABC-456",
-                "imsOrgId": "49C579695EA927530A494036@AdobeOrg",
+                "imsOrgId": "<your_ims_org_id>@AdobeOrg",
                 "userId": "user@marketo.com"
             }
-        }
+        },
+        "recipient_client_id": "<your_client_id>"
     }
 }
 ````
 
-*Data Field Definitions:*
+### Data Field Definitions
 
-Field | Description
---- | ---
-event_id | Unique UUID generated per event
-specversion | CloudEvents version specification being used
-id | Unique UUID generated per event
-type | Type of event used for event subscription routing
-source | Context in which an event happened
-time | Timestamp of the completion of the action
-datacontenttype | Content type of the data object
-dataschema | User Audit Data Stream event schema version
-data | Event data object
-componentId | ID of the asset in Marketo
-componentType | Type of the asset in Marketo
-eventAction | Asset action that occurred in Marketo
-munchkinId | Internal Marketo subscription identifier
-imsOrgId | Internal Adobe organization identifier
-userId | Email ID of the user in Marketo who completed the action
+Many of the fields are common across the different types of events. The `event.body.data` object will contain the specific details of the event.
 
-### Event List
+| Field           | Type              | Description                                              |
+|-----------------|-------------------|----------------------------------------------------------|
+| event_id        | String            | Unique UUID generated per event                          |
+| specversion     | String            | CloudEvents version specification being used             |
+| type            | String            | Type of event used for event subscription routing        |
+| source          | String            | Context in which an event happened                       |
+| time            | String (DateTime) | Timestamp of the completion of the action                |
+| datacontenttype | String            | Content type of the data object                          |
+| dataschema      | String            | User Audit Data Stream event schema version              |
+| data            | Object            | Event data object                                        |
+
+The `data` object contains the following fields:
+
+| Field           | Type   | Description                                              |
+|-----------------|--------|----------------------------------------------------------|
+| componentId     | Number | ID of the asset in Marketo                               |
+| componentType   | String | Type of the asset in Marketo                             |
+| eventAction     | String | Asset action that occurred in Marketo                    |
+| munchkinId      | String | Internal Marketo subscription identifier                 |
+| imsOrgId        | String | Internal Adobe organization identifier                   |
+| userId          | String | Email ID of the user in Marketo who completed the action |
+
+## Event List
 
 *Note - This is a snapshot listing of most available events.  There may be some events that don't show up or no longer exist.*
 
@@ -198,5 +204,13 @@ Segmentation | approve, create, delete, draftCreated, draftDiscarded, rename, un
 Smart Campaign | abort, activate, clone, create, deactivate, delete, edit, modify campaign schedule, modify flow step action, modify smart list setup, move, rename
 Smart List | clone, create, delete, edit, export, modify smartlist setup, rename
 Snippet | approve, approve with no-draft, clone, create, delete, edit, rename, unapprove
+
+The following events are related to access control and security:
+
+Component | Event Type List
+--- | ---
+Login | login success, login failure
+Role | create, delete, edit
+User | create, delete, edit
 
 <Debug/>
